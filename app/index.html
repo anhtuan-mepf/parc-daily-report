@@ -1,0 +1,638 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project Health Check</title>
+<meta name="description" content="Kiểm tra sức khỏe dự án MEPF: tiến độ, chi phí, dòng tiền, RFI, NCR, submittal, HSE, nhân lực, rủi ro.">
+<meta name="theme-color" content="#0f5c8c">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<style>
+:root{
+  --bg:#f4f6f8; --card:#ffffff; --text:#1c2530; --muted:#5f6b78; --line:#dde3e9;
+  --brand:#0f5c8c; --brand-2:#e8f1f7;
+  --green:#1e8e4f; --green-bg:#e3f4ea; --amber:#b7791f; --amber-bg:#fdf3dc; --red:#c53030; --red-bg:#fbe5e5;
+  --input:#ffffff; --shadow:0 1px 2px rgba(0,0,0,.06);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#11161c; --card:#1a2129; --text:#e4e9ee; --muted:#9aa6b2; --line:#2c3640;
+    --brand:#4ea3d8; --brand-2:#1d2d3a;
+    --green:#4cc38a; --green-bg:#173327; --amber:#e3b04b; --amber-bg:#3a2f17; --red:#f07171; --red-bg:#3d1d1d;
+    --input:#141a20; --shadow:none;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#11161c; --card:#1a2129; --text:#e4e9ee; --muted:#9aa6b2; --line:#2c3640;
+  --brand:#4ea3d8; --brand-2:#1d2d3a;
+  --green:#4cc38a; --green-bg:#173327; --amber:#e3b04b; --amber-bg:#3a2f17; --red:#f07171; --red-bg:#3d1d1d;
+  --input:#141a20; --shadow:none;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font:14px/1.5 -apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+header{background:var(--card);border-bottom:1px solid var(--line);padding:12px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+header h1{font-size:17px;margin:0;font-weight:650}
+header .sub{color:var(--muted);font-size:13px}
+header .spacer{flex:1}
+nav{background:var(--card);border-bottom:1px solid var(--line);display:flex;overflow-x:auto;padding:0 8px;position:sticky;top:0;z-index:5}
+nav button{background:none;border:0;border-bottom:2px solid transparent;color:var(--muted);padding:10px 12px;font:inherit;cursor:pointer;white-space:nowrap}
+nav button.active{color:var(--brand);border-bottom-color:var(--brand);font-weight:600}
+main{max-width:1200px;margin:0 auto;padding:16px}
+section.tab{display:none}
+section.tab.active{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:16px;box-shadow:var(--shadow)}
+.card h2{font-size:15px;margin:0 0 12px;font-weight:650}
+.card h3{font-size:14px;margin:16px 0 8px}
+.grid{display:grid;gap:12px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}
+input,select,textarea{font:inherit;color:var(--text);background:var(--input);border:1px solid var(--line);border-radius:6px;padding:6px 8px;width:100%;min-width:0}
+textarea{min-height:60px;resize:vertical}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--brand);outline-offset:-1px}
+.btn{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:6px;padding:7px 12px;cursor:pointer}
+.btn:hover{border-color:var(--brand)}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.sm{padding:3px 8px;font-size:12px}
+.btn.danger{color:var(--red)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.muted{color:var(--muted)}
+.small{font-size:12px}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:6px}
+table{border-collapse:collapse;width:100%;min-width:640px}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:middle}
+th{background:var(--brand-2);font-size:12px;font-weight:600;white-space:nowrap}
+td input,td select{padding:4px 6px}
+tr.flag-red td{background:var(--red-bg)}
+tr.flag-amber td{background:var(--amber-bg)}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+/* score */
+.hero{display:grid;grid-template-columns:220px 1fr;gap:16px;align-items:center}
+@media (max-width:640px){.hero{grid-template-columns:1fr}}
+.gauge{text-align:center}
+.gauge .val{font-size:44px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.gauge .lbl{font-size:13px;margin-top:6px;font-weight:600}
+.pill{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:600}
+.G{color:var(--green)} .A{color:var(--amber)} .R{color:var(--red)}
+.pill.G{background:var(--green-bg)} .pill.A{background:var(--amber-bg)} .pill.R{background:var(--red-bg)}
+.dims{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.dim{border:1px solid var(--line);border-left:4px solid var(--line);border-radius:6px;padding:10px 12px;background:var(--card)}
+.dim.G{border-left-color:var(--green)} .dim.A{border-left-color:var(--amber)} .dim.R{border-left-color:var(--red)}
+.dim .t{display:flex;justify-content:space-between;align-items:baseline;color:var(--text)}
+.dim .t b{font-size:22px;font-variant-numeric:tabular-nums}
+.dim .k{font-size:12px;color:var(--muted);margin-top:2px}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:6px}
+.bar>i{display:block;height:100%}
+.bar>i.G{background:var(--green)} .bar>i.A{background:var(--amber)} .bar>i.R{background:var(--red)}
+ul.issues{margin:0;padding:0;list-style:none}
+ul.issues li{padding:8px 0;border-bottom:1px solid var(--line);display:flex;gap:10px}
+ul.issues li:last-child{border-bottom:0}
+ul.issues .lvl{flex:0 0 auto;align-self:flex-start;white-space:nowrap}
+#trendChart svg,#progChart svg{max-width:720px;display:block}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:12px}
+.kpi{background:var(--brand-2);border-radius:6px;padding:8px 10px}
+.kpi .v{font-size:18px;font-weight:650;font-variant-numeric:tabular-nums}
+.kpi .n{font-size:11px;color:var(--muted)}
+svg text{fill:var(--muted);font-size:11px}
+.toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:8px 14px;border-radius:6px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:20}
+.toast.show{opacity:1}
+@media print{
+  nav,.no-print,header .row{display:none!important}
+  body{background:#fff;color:#000}
+  section.tab{display:none!important}
+  section#tab-dash{display:block!important}
+  .card{break-inside:avoid;border-color:#ccc}
+  main{padding:0}
+}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1 id="hdrName">Project Health Check</h1>
+    <div class="sub" id="hdrSub"></div>
+  </div>
+  <div class="spacer"></div>
+  <div class="row no-print">
+    <button class="btn" id="btnSnap" title="Lưu điểm kỳ này vào lịch sử">Lưu kỳ báo cáo</button>
+    <button class="btn" id="btnCopy">Copy tóm tắt</button>
+    <button class="btn" onclick="window.print()">In / PDF</button>
+    <button class="btn" id="btnTheme" title="Đổi giao diện sáng/tối">Sáng/Tối</button>
+  </div>
+</header>
+<nav id="nav"></nav>
+<main>
+  <!-- DASHBOARD -->
+  <section class="tab" id="tab-dash">
+    <div class="card">
+      <div class="hero">
+        <div class="gauge">
+          <svg id="gaugeSvg" viewBox="0 0 200 120" width="200" height="120" aria-hidden="true"></svg>
+          <div class="val" id="ovVal">–</div>
+          <div class="lbl" id="ovLbl"></div>
+        </div>
+        <div>
+          <div class="muted small" id="ovNote"></div>
+          <div class="kpis" id="kpis"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Điểm theo hạng mục</h2>
+      <div class="dims" id="dims"></div>
+    </div>
+    <div class="grid g2">
+      <div class="card">
+        <h2>Vấn đề & hành động đề xuất</h2>
+        <ul class="issues" id="issues"></ul>
+      </div>
+      <div class="card">
+        <h2>Tiến độ theo hệ thống (Kế hoạch vs Thực tế)</h2>
+        <div id="progChart"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Xu hướng điểm sức khỏe</h2>
+      <div id="trendChart"></div>
+    </div>
+  </section>
+
+  <!-- PROJECT -->
+  <section class="tab" id="tab-project">
+    <div class="card">
+      <h2>Thông tin dự án</h2>
+      <div class="grid g3" id="projForm"></div>
+    </div>
+    <div class="card">
+      <h2>Tiến độ theo hệ thống</h2>
+      <p class="muted small">Trọng số = tỷ trọng giá trị hệ thống trong gói MEPF. SPI = Σ(trọng số × % thực tế) / Σ(trọng số × % kế hoạch).</p>
+      <div id="tblProgress"></div>
+    </div>
+    <div class="card">
+      <h2>Chi phí (EVM) & Dòng tiền</h2>
+      <p class="muted small">Đơn vị: tỷ VND. PV/EV/AC lũy kế đến ngày báo cáo. Dòng tiền = tiền CĐT thanh toán cho nhà thầu.</p>
+      <div class="grid g4" id="costForm"></div>
+    </div>
+  </section>
+
+  <section class="tab" id="tab-rfi"><div class="card"><h2>RFI log</h2><p class="muted small">Quá hạn = trạng thái Open và hạn trả lời &lt; ngày báo cáo.</p><div id="tblRfi"></div></div></section>
+  <section class="tab" id="tab-ncr"><div class="card"><h2>NCR log</h2><p class="muted small">Major mở → hạng mục NCR tự động đỏ.</p><div id="tblNcr"></div></div></section>
+  <section class="tab" id="tab-sub"><div class="card"><h2>Submittal / Shop drawing / Material approval</h2><p class="muted small">Trạng thái: Pending, A (Approved), B (Approved with comments), C (Rejected / Revise & resubmit).</p><div id="tblSub"></div></div></section>
+
+  <section class="tab" id="tab-hse">
+    <div class="card"><h2>HSE (lũy kế trong kỳ)</h2><div class="grid g4" id="hseForm"></div></div>
+    <div class="card"><h2>Nhân lực</h2><div class="grid g4" id="mpForm"></div></div>
+  </section>
+
+  <section class="tab" id="tab-risk"><div class="card"><h2>Risk register</h2><p class="muted small">Mức rủi ro = Xác suất (1–5) × Tác động (1–5). ≥15: Cao, 8–14: Trung bình.</p><div id="tblRisk"></div></div></section>
+
+  <section class="tab" id="tab-hist">
+    <div class="card">
+      <h2>Lịch sử các kỳ báo cáo</h2>
+      <div id="tblHist"></div>
+    </div>
+  </section>
+
+  <section class="tab" id="tab-set">
+    <div class="card">
+      <h2>Trọng số hạng mục (tổng nên = 100)</h2>
+      <div class="grid g4" id="wForm"></div>
+      <p class="muted small" id="wSum"></p>
+    </div>
+    <div class="card">
+      <h2>Ngưỡng đánh giá</h2>
+      <div class="grid g4" id="thForm"></div>
+      <p class="muted small">Quy tắc bổ sung: nếu có bất kỳ hạng mục nào Đỏ thì tổng thể tối đa là Vàng; có LTI trong kỳ thì HSE tối đa 40 điểm.</p>
+    </div>
+    <div class="card">
+      <h2>Dữ liệu</h2>
+      <p class="muted small">Dữ liệu lưu trong trình duyệt của máy này. Dùng Xuất/Nhập JSON để chuyển máy hoặc chia sẻ cho người khác.</p>
+      <div class="row">
+        <button class="btn primary" id="btnExport">Xuất JSON</button>
+        <label class="btn">Nhập JSON<input type="file" id="fileImport" accept="application/json,.json" hidden></label>
+        <button class="btn" id="btnSample">Nạp dữ liệu mẫu (Parc Hà Nội)</button>
+        <button class="btn danger" id="btnClear">Xóa toàn bộ</button>
+      </div>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+const STORE_KEY = 'phc.v1';
+
+/* ---------- Sample data (Parc Hà Nội, theo daily_report.py) ---------- */
+function sampleData(){
+  return {
+    project:{name:'Parc Hà Nội',code:'PARC-MEPF',pm:'Anh Tuấn',client:'',reportDate:'2026-06-21',startDate:'2025-09-01',endDate:'2026-12-31',scope:'MEPF'},
+    progress:[
+      {name:'HVAC',weight:35,plan:75,actual:65},
+      {name:'Plumbing',weight:20,plan:80,actual:80},
+      {name:'Electrical',weight:30,plan:75,actual:70},
+      {name:'Fire Protection',weight:15,plan:65,actual:60}
+    ],
+    cost:{bac:150,pv:98,ev:92,ac:95,cashPlan:105,cashActual:98,monthPlan:15,monthActual:8},
+    rfi:[
+      {no:'P-012',title:'HVAC tầng 5 – cao độ ống gió giao cắt dầm',disc:'HVAC',sent:'2026-06-10',due:'2026-06-16',status:'Open',owner:'Tư vấn TK'},
+      {no:'P-015',title:'Ống nước tầng B1 – điểm đấu nối',disc:'Plumbing',sent:'2026-06-15',due:'2026-06-20',status:'Answered',owner:'Tư vấn TK'},
+      {no:'P-018',title:'Điện tầng 3 – vị trí tủ DB',disc:'Electrical',sent:'2026-06-18',due:'2026-06-25',status:'Open',owner:'Tư vấn TK'}
+    ],
+    ncr:[
+      {no:'N-005',title:'Ống nước tầng 2 – rò rỉ mối hàn',disc:'Plumbing',sev:'Major',raised:'2026-06-02',due:'2026-06-09',status:'Closed'},
+      {no:'N-007',title:'Điều hòa tầng 4 – sai thông số',disc:'HVAC',sev:'Minor',raised:'2026-06-12',due:'2026-06-25',status:'Open'},
+      {no:'N-009',title:'PCCC tầng 1 – sai vị trí đầu báo',disc:'Fire Protection',sev:'Observation',raised:'2026-06-17',due:'2026-06-24',status:'Open'}
+    ],
+    sub:[
+      {no:'SD-HV-021',title:'Shop drawing ống gió tầng 6–8',type:'Shop drawing',sent:'2026-06-05',due:'2026-06-15',status:'Pending'},
+      {no:'MA-EL-009',title:'Material approval – busway',type:'Material',sent:'2026-06-01',due:'2026-06-11',status:'C'},
+      {no:'SD-PL-014',title:'Shop drawing cấp thoát nước B1',type:'Shop drawing',sent:'2026-06-08',due:'2026-06-18',status:'B'},
+      {no:'SD-FP-007',title:'Shop drawing sprinkler tầng 2–4',type:'Shop drawing',sent:'2026-06-14',due:'2026-06-24',status:'Pending'}
+    ],
+    hse:{manhours:45000,lti:0,nearMiss:3,firstAid:1,openFindings:4,toolbox:18},
+    mp:{plan:120,actual:104,supervisors:8},
+    risk:[
+      {title:'Chậm phê duyệt shop drawing HVAC ảnh hưởng lắp đặt tầng 6–8',p:4,i:4,owner:'Trưởng nhóm HVAC',mit:'Họp phối hợp với TVTK 2 lần/tuần, ưu tiên khu vực đường găng',status:'Open'},
+      {title:'Thiết bị chiller giao hàng trễ',p:3,i:5,owner:'Mua hàng',mit:'Theo dõi FAT, phương án vận chuyển air freight một phần',status:'Open'},
+      {title:'Thiếu nhân lực điện giai đoạn cao điểm',p:3,i:3,owner:'CHT',mit:'Bổ sung thầu phụ dự phòng',status:'Open'}
+    ],
+    history:[
+      {date:'2026-05-31',overall:81,dims:{}},
+      {date:'2026-06-07',overall:78,dims:{}},
+      {date:'2026-06-14',overall:74,dims:{}}
+    ],
+    settings:defaultSettings()
+  };
+}
+function defaultSettings(){
+  return {
+    weights:{schedule:25,cost:15,cash:10,rfi:10,ncr:10,sub:10,hse:10,mp:5,risk:5},
+    green:80, amber:60
+  };
+}
+function emptyData(){
+  return {project:{name:'Dự án mới',code:'',pm:'',client:'',reportDate:todayISO(),startDate:'',endDate:'',scope:'MEPF'},
+    progress:[],cost:{bac:0,pv:0,ev:0,ac:0,cashPlan:0,cashActual:0,monthPlan:0,monthActual:0},
+    rfi:[],ncr:[],sub:[],hse:{manhours:0,lti:0,nearMiss:0,firstAid:0,openFindings:0,toolbox:0},
+    mp:{plan:0,actual:0,supervisors:0},risk:[],history:[],settings:defaultSettings()};
+}
+
+/* ---------- Utils ---------- */
+const $ = s => document.querySelector(s);
+const clamp = (v,a=0,b=100) => Math.max(a,Math.min(b,v));
+const num = v => { const n = parseFloat(v); return isFinite(n) ? n : 0; };
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function todayISO(){ const d=new Date(); return new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString().slice(0,10); }
+function fmtD(iso){ if(!iso) return ''; const [y,m,d]=iso.split('-'); return `${d}/${m}/${y}`; }
+function daysBetween(a,b){ if(!a||!b) return 0; return Math.round((new Date(b)-new Date(a))/864e5); }
+const f1 = v => (Math.round(v*10)/10).toLocaleString('vi-VN');
+const f2 = v => (Math.round(v*100)/100).toLocaleString('vi-VN',{minimumFractionDigits:2,maximumFractionDigits:2});
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('show'),1800); }
+
+/* ---------- State ---------- */
+let S;
+function load(){
+  try{ const raw = localStorage.getItem(STORE_KEY); if(raw){ S = JSON.parse(raw); } }catch(e){}
+  if(!S) S = sampleData();
+  S.settings = Object.assign(defaultSettings(), S.settings||{});
+  S.settings.weights = Object.assign(defaultSettings().weights, S.settings.weights||{});
+}
+function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(S)); }catch(e){} }
+
+/* ---------- Scoring ---------- */
+const DIM_LABEL = {schedule:'Tiến độ',cost:'Chi phí (CPI)',cash:'Dòng tiền',rfi:'RFI',ncr:'NCR / Chất lượng',sub:'Submittal / Shop drawing',hse:'HSE',mp:'Nhân lực',risk:'Rủi ro'};
+
+function rag(score){ const s=S.settings; return score>=s.green?'G':score>=s.amber?'A':'R'; }
+const RAG_TXT = {G:'Tốt',A:'Cần theo dõi',R:'Nguy cơ'};
+
+function compute(){
+  const rd = S.project.reportDate || todayISO();
+  const D = {}; const issues = [];
+  const add = (lvl,text,action) => issues.push({lvl,text,action});
+
+  // Schedule
+  let wp=0, wa=0;
+  S.progress.forEach(r=>{ wp+=num(r.weight)*num(r.plan); wa+=num(r.weight)*num(r.actual); });
+  const spi = wp>0 ? wa/wp : null;
+  D.schedule = {score: spi==null?null:clamp((spi-0.7)/0.3*100), kpi: spi==null?'Chưa có dữ liệu':`SPI ${f2(spi)}`};
+  S.progress.forEach(r=>{
+    const gap = num(r.actual)-num(r.plan);
+    if(gap<=-10) add('R',`${r.name} chậm ${f1(-gap)}% so với kế hoạch (${f1(num(r.actual))}% / ${f1(num(r.plan))}%).`,'Lập recovery plan, tăng ca/bổ sung tổ đội, xác định ràng buộc (vật tư, shop drawing, mặt bằng).');
+    else if(gap<=-5) add('A',`${r.name} chậm ${f1(-gap)}% so với kế hoạch.`,'Rà soát look-ahead 3 tuần, xử lý ràng buộc trước khi ảnh hưởng đường găng.');
+  });
+
+  // Cost
+  const c = S.cost;
+  const cpi = num(c.ac)>0 ? num(c.ev)/num(c.ac) : null;
+  const spiEvm = num(c.pv)>0 ? num(c.ev)/num(c.pv) : null;
+  D.cost = {score: cpi==null?null:clamp((cpi-0.7)/0.3*100), kpi: cpi==null?'Chưa có dữ liệu':`CPI ${f2(cpi)}${spiEvm!=null?` · SPI(EVM) ${f2(spiEvm)}`:''}`};
+  let eac=null;
+  if(cpi!=null && num(c.bac)>0){
+    eac = num(c.bac)/cpi;
+    if(cpi<0.95) add(cpi<0.9?'R':'A',`CPI ${f2(cpi)} – dự báo EAC ${f1(eac)} tỷ, vượt BAC ${f1(eac-num(c.bac))} tỷ.`,'Rà soát chi phí trực tiếp theo hệ thống, kiểm soát phát sinh, đẩy nhanh VO đã thực hiện.');
+  }
+
+  // Cash
+  const cr = num(c.cashPlan)>0 ? num(c.cashActual)/num(c.cashPlan) : null;
+  D.cash = {score: cr==null?null:clamp((cr-0.6)/0.4*100), kpi: cr==null?'Chưa có dữ liệu':`Thu ${f1(num(c.cashActual))}/${f1(num(c.cashPlan))} tỷ (${Math.round(cr*100)}%)`};
+  if(num(c.monthPlan)>0){
+    const gap = num(c.monthPlan)-num(c.monthActual);
+    if(gap>0 && num(c.monthActual)/num(c.monthPlan)<0.8) add(num(c.monthActual)/num(c.monthPlan)<0.6?'R':'A',`Thu tiền tháng này ${f1(num(c.monthActual))}/${f1(num(c.monthPlan))} tỷ, thiếu ${f1(gap)} tỷ.`,'Kiểm tra hồ sơ thanh toán đang treo (nghiệm thu khối lượng, chữ ký TVGS), làm việc trực tiếp với CĐT.');
+  }
+
+  // RFI
+  const rfiOpen = S.rfi.filter(r=>r.status==='Open');
+  const rfiOver = rfiOpen.filter(r=>r.due && r.due<rd);
+  const overDays = rfiOver.map(r=>daysBetween(r.due,rd));
+  D.rfi = {score: S.rfi.length? clamp(100 - 15*rfiOver.length - 2*Math.max(0,rfiOpen.length-rfiOver.length-5) - Math.max(0,...overDays,0)*1) : null,
+           kpi:`${rfiOpen.length} mở · ${rfiOver.length} quá hạn` };
+  rfiOver.forEach(r=>{ const d=daysBetween(r.due,rd); add(d>=7?'R':'A',`RFI ${r.no} (${r.title}) quá hạn ${d} ngày.`,`Escalate tới ${r.owner||'Tư vấn'}, nêu rõ ảnh hưởng tiến độ bằng văn bản.`); });
+
+  // NCR
+  const ncrOpen = S.ncr.filter(r=>r.status!=='Closed');
+  const nMaj = ncrOpen.filter(r=>r.sev==='Major').length, nMin = ncrOpen.filter(r=>r.sev==='Minor').length, nObs = ncrOpen.filter(r=>r.sev==='Observation').length;
+  const ncrOver = ncrOpen.filter(r=>r.due && r.due<rd);
+  let ncrScore = S.ncr.length? clamp(100 - 30*nMaj - 8*nMin - 2*nObs - 10*ncrOver.length) : null;
+  if(nMaj>0 && ncrScore!=null) ncrScore = Math.min(ncrScore, S.settings.amber-1);
+  D.ncr = {score:ncrScore, kpi:`${ncrOpen.length} mở (Major ${nMaj}/Minor ${nMin}/Obs ${nObs})`};
+  ncrOpen.filter(r=>r.sev==='Major').forEach(r=>add('R',`NCR Major ${r.no} chưa đóng: ${r.title}.`,'Root cause analysis, khắc phục và nghiệm thu lại; kiểm tra các khu vực tương tự.'));
+  ncrOver.filter(r=>r.sev!=='Major').forEach(r=>add('A',`NCR ${r.no} quá hạn khắc phục ${daysBetween(r.due,rd)} ngày.`,'Giao người chịu trách nhiệm và hạn đóng mới.'));
+
+  // Submittal
+  const subPend = S.sub.filter(r=>r.status==='Pending');
+  const subOver = subPend.filter(r=>r.due && r.due<rd);
+  const subDone = S.sub.filter(r=>['A','B','C'].includes(r.status));
+  const rejRate = subDone.length ? subDone.filter(r=>r.status==='C').length/subDone.length : 0;
+  D.sub = {score: S.sub.length? clamp(100 - 12*subOver.length - 50*rejRate) : null, kpi:`${subPend.length} chờ duyệt · ${subOver.length} quá hạn · tỷ lệ C ${Math.round(rejRate*100)}%`};
+  subOver.forEach(r=>add('A',`${r.type} ${r.no} chờ duyệt quá hạn ${daysBetween(r.due,rd)} ngày.`,'Đôn đốc TVGS/TVTK, đề nghị họp review trực tiếp.'));
+  if(rejRate>=0.25) add('R',`Tỷ lệ submittal bị trả về (C) ${Math.round(rejRate*100)}%.`,'Kiểm tra chất lượng hồ sơ trước khi trình (checklist nội bộ, BIM clash check).');
+
+  // HSE
+  const h = S.hse;
+  const ltifr = num(h.manhours)>0 ? num(h.lti)*1e6/num(h.manhours) : 0;
+  let hseScore = 100 - 4*num(h.openFindings) - 3*num(h.firstAid);
+  if(num(h.lti)>0) hseScore = Math.min(hseScore,40);
+  D.hse = {score: clamp(hseScore), kpi:`LTI ${num(h.lti)} · LTIFR ${f2(ltifr)} · ${num(h.openFindings)} tồn tại mở`};
+  if(num(h.lti)>0) add('R',`Có ${num(h.lti)} LTI trong kỳ.`,'Điều tra sự cố, báo cáo QHSE, toolbox talk toàn công trường.');
+  if(num(h.openFindings)>=5) add('A',`${num(h.openFindings)} tồn tại an toàn chưa khắc phục.`,'Phân công khắc phục trong 48h, kiểm tra lại.');
+
+  // Manpower
+  const m = S.mp;
+  const mr = num(m.plan)>0 ? num(m.actual)/num(m.plan) : null;
+  D.mp = {score: mr==null?null:clamp((Math.min(mr,1)-0.6)/0.4*100), kpi: mr==null?'Chưa có dữ liệu':`${num(m.actual)}/${num(m.plan)} người (${Math.round(mr*100)}%)`};
+  if(mr!=null && mr<0.9) add(mr<0.8?'R':'A',`Nhân lực đạt ${Math.round(mr*100)}% kế hoạch (thiếu ${num(m.plan)-num(m.actual)} người).`,'Yêu cầu thầu phụ bổ sung theo histogram; xem xét thầu phụ dự phòng.');
+
+  // Risk
+  const rOpen = S.risk.filter(r=>r.status!=='Closed');
+  const rHigh = rOpen.filter(r=>num(r.p)*num(r.i)>=15), rMed = rOpen.filter(r=>{const x=num(r.p)*num(r.i); return x>=8&&x<15;});
+  D.risk = {score: S.risk.length? clamp(100 - 15*rHigh.length - 5*rMed.length) : null, kpi:`${rHigh.length} cao · ${rMed.length} trung bình`};
+  rHigh.forEach(r=>add('A',`Rủi ro cao (${num(r.p)*num(r.i)}): ${r.title}.`,r.mit||'Cập nhật biện pháp giảm thiểu.'));
+
+  // Overall
+  const W = S.settings.weights; let ws=0, ss=0;
+  Object.keys(DIM_LABEL).forEach(k=>{ if(D[k].score!=null){ ws+=num(W[k]); ss+=num(W[k])*D[k].score; } D[k].rag = D[k].score==null?null:rag(D[k].score); });
+  let overall = ws>0 ? ss/ws : 0;
+  const anyRed = Object.values(D).some(d=>d.rag==='R');
+  let capped = false;
+  if(anyRed && overall>=S.settings.green){ overall = S.settings.green-1; capped=true; }
+  overall = Math.round(overall);
+
+  const order = {R:0,A:1,G:2};
+  issues.sort((a,b)=>order[a.lvl]-order[b.lvl]);
+  return {D, overall, ovRag:rag(overall), capped, issues, spi, cpi, eac, cr, rfiOver, ncrOpen, ltifr};
+}
+
+/* ---------- Render: dashboard ---------- */
+function gauge(score, r){
+  const col = getComputedStyle(document.documentElement).getPropertyValue(r==='G'?'--green':r==='A'?'--amber':'--red');
+  const line = getComputedStyle(document.documentElement).getPropertyValue('--line');
+  const a = Math.PI*(1-score/100), cx=100, cy=100, R=80;
+  const x = cx+R*Math.cos(a), y = cy-R*Math.sin(a);
+  return `<path d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="${line}" stroke-width="14" stroke-linecap="round"/>
+          ${score>0?`<path d="M20 100 A80 80 0 0 1 ${x.toFixed(1)} ${y.toFixed(1)}" fill="none" stroke="${col}" stroke-width="14" stroke-linecap="round"/>`:''}`;
+}
+function renderDash(){
+  const R = compute(); const p = S.project;
+  $('#gaugeSvg').innerHTML = gauge(R.overall, R.ovRag);
+  $('#ovVal').className = 'val '+R.ovRag; $('#ovVal').textContent = R.overall;
+  $('#ovLbl').innerHTML = `<span class="pill ${R.ovRag}">${RAG_TXT[R.ovRag]}</span>`;
+  const elapsed = p.startDate&&p.endDate ? clamp(daysBetween(p.startDate,p.reportDate)/Math.max(1,daysBetween(p.startDate,p.endDate))*100) : null;
+  $('#ovNote').innerHTML = `Ngày báo cáo <b>${fmtD(p.reportDate)}</b>${elapsed!=null?` · Thời gian đã qua ${Math.round(elapsed)}% · còn ${Math.max(0,daysBetween(p.reportDate,p.endDate))} ngày`:''}${R.capped?' · <span class="R">Tổng thể bị giới hạn ở mức Vàng do có hạng mục Đỏ</span>':''}`;
+  const k = [
+    ['SPI', R.spi!=null?f2(R.spi):'–'],
+    ['CPI', R.cpi!=null?f2(R.cpi):'–'],
+    ['EAC (tỷ)', R.eac!=null?f1(R.eac):'–'],
+    ['Thu tiền / KH', R.cr!=null?Math.round(R.cr*100)+'%':'–'],
+    ['RFI quá hạn', R.rfiOver.length],
+    ['NCR mở', R.ncrOpen.length],
+    ['LTIFR', f2(R.ltifr)],
+  ];
+  $('#kpis').innerHTML = k.map(([n,v])=>`<div class="kpi"><div class="v">${v}</div><div class="n">${n}</div></div>`).join('');
+  $('#dims').innerHTML = Object.keys(DIM_LABEL).map(key=>{
+    const d = R.D[key]; const s = d.score==null?null:Math.round(d.score);
+    return `<div class="dim ${d.rag||''}"><div class="t"><span>${DIM_LABEL[key]}</span><b class="${d.rag||'muted'}">${s==null?'–':s}</b></div>
+      <div class="bar"><i class="${d.rag||''}" style="width:${s||0}%"></i></div><div class="k">${esc(d.kpi)} · trọng số ${num(S.settings.weights[key])}</div></div>`;
+  }).join('');
+  $('#issues').innerHTML = R.issues.length ? R.issues.map(i=>`<li><span class="lvl pill ${i.lvl}">${i.lvl==='R'?'Đỏ':'Vàng'}</span><div><div>${esc(i.text)}</div><div class="muted small">→ ${esc(i.action)}</div></div></li>`).join('')
+    : '<li class="muted">Không có vấn đề nổi bật.</li>';
+  renderProgChart(); renderTrend(R);
+  $('#hdrName').textContent = p.name || 'Project Health Check';
+  $('#hdrSub').textContent = [p.code,p.scope,p.pm&&('PM: '+p.pm)].filter(Boolean).join(' · ');
+  document.title = (p.name? p.name+' – ':'')+'Health Check';
+  return R;
+}
+function renderProgChart(){
+  const rows = S.progress; if(!rows.length){ $('#progChart').innerHTML='<p class="muted">Chưa có dữ liệu tiến độ.</p>'; return; }
+  const W=520, rowH=34, left=120, right=50, H=rows.length*rowH+30, bw=W-left-right;
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Tiến độ theo hệ thống">`;
+  [0,25,50,75,100].forEach(t=>{ const x=left+bw*t/100; s+=`<line x1="${x}" x2="${x}" y1="0" y2="${H-20}" stroke="var(--line)"/><text x="${x}" y="${H-6}" text-anchor="middle">${t}%</text>`; });
+  rows.forEach((r,i)=>{
+    const y=i*rowH+6, gap=num(r.actual)-num(r.plan), cls = gap<=-10?'--red':gap<=-5?'--amber':'--green';
+    s+=`<text x="${left-8}" y="${y+16}" text-anchor="end" style="fill:var(--text)">${esc(r.name)}</text>`;
+    s+=`<rect x="${left}" y="${y+4}" width="${bw*clamp(num(r.actual))/100}" height="16" rx="3" fill="var(${cls})"/>`;
+    s+=`<line x1="${left+bw*clamp(num(r.plan))/100}" x2="${left+bw*clamp(num(r.plan))/100}" y1="${y}" y2="${y+24}" stroke="var(--text)" stroke-width="2"/>`;
+    s+=`<text x="${W-right+6}" y="${y+16}">${f1(num(r.actual))}%</text>`;
+  });
+  s+='</svg><p class="muted small">Thanh = thực tế, vạch đứng = kế hoạch.</p>';
+  $('#progChart').innerHTML = s;
+}
+function renderTrend(R){
+  const pts = [...S.history].sort((a,b)=>a.date<b.date?-1:1);
+  const live = {date:S.project.reportDate, overall:R.overall, live:true};
+  if(!pts.some(p=>p.date===live.date)) pts.push(live);
+  if(pts.length<2){ $('#trendChart').innerHTML='<p class="muted">Cần ít nhất 2 kỳ. Bấm "Lưu kỳ báo cáo" mỗi tuần để theo dõi xu hướng.</p>'; return; }
+  const W=720,H=200,l=34,r=16,t=10,b=28, iw=W-l-r, ih=H-t-b;
+  const X=i=>l+iw*(pts.length===1?0.5:i/(pts.length-1)), Y=v=>t+ih*(1-v/100);
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Xu hướng điểm">`;
+  const g=S.settings.green, a=S.settings.amber;
+  s+=`<rect x="${l}" y="${Y(100)}" width="${iw}" height="${Y(g)-Y(100)}" fill="var(--green-bg)"/>`;
+  s+=`<rect x="${l}" y="${Y(g)}" width="${iw}" height="${Y(a)-Y(g)}" fill="var(--amber-bg)"/>`;
+  s+=`<rect x="${l}" y="${Y(a)}" width="${iw}" height="${Y(0)-Y(a)}" fill="var(--red-bg)"/>`;
+  [0,a,g,100].forEach(v=>s+=`<text x="${l-6}" y="${Y(v)+4}" text-anchor="end">${v}</text>`);
+  s+=`<polyline fill="none" stroke="var(--brand)" stroke-width="2" points="${pts.map((p,i)=>X(i)+','+Y(p.overall)).join(' ')}"/>`;
+  pts.forEach((p,i)=>{ s+=`<circle cx="${X(i)}" cy="${Y(p.overall)}" r="4" fill="${p.live?'var(--card)':'var(--brand)'}" stroke="var(--brand)" stroke-width="2"><title>${fmtD(p.date)}: ${p.overall}</title></circle>`;
+    s+=`<text x="${X(i)}" y="${Y(p.overall)-8}" text-anchor="middle" style="fill:var(--text)">${p.overall}</text>`;
+    s+=`<text x="${X(i)}" y="${H-8}" text-anchor="middle">${fmtD(p.date).slice(0,5)}</text>`; });
+  s+='</svg><p class="muted small">Điểm rỗng = kỳ hiện tại (chưa lưu).</p>';
+  $('#trendChart').innerHTML=s;
+}
+
+/* ---------- Generic forms & tables ---------- */
+function fieldsForm(el, obj, fields){
+  el.innerHTML = fields.map(f=>`<label class="f">${f.label}<input data-k="${f.key}" type="${f.type||'number'}" ${(f.type||'number')==='number'?'step="any"':''} value="${esc(obj[f.key])}"></label>`).join('');
+  el.querySelectorAll('input').forEach(inp=>inp.addEventListener('input',()=>{
+    obj[inp.dataset.k] = inp.type==='number' ? num(inp.value) : inp.value; changed();
+  }));
+}
+function table(el, rows, cols, opts={}){
+  const html = `<div class="tbl-wrap"><table><thead><tr><th>#</th>${cols.map(c=>`<th class="${c.type==='number'?'num':''}">${c.label}</th>`).join('')}${opts.extra?`<th>${opts.extra.label}</th>`:''}<th></th></tr></thead><tbody>
+    ${rows.map((r,i)=>{ const fl = opts.flag?opts.flag(r):''; return `<tr class="${fl?'flag-'+fl:''}"><td class="muted">${i+1}</td>${cols.map(c=>`<td style="${c.w?`min-width:${c.w}px`:''}">${cell(c,r[c.key],i)}</td>`).join('')}${opts.extra?`<td class="small">${opts.extra.fn(r)}</td>`:''}<td><button class="btn sm danger" data-del="${i}" title="Xóa dòng">✕</button></td></tr>`; }).join('')}
+    </tbody></table></div>
+    <div class="row" style="margin-top:8px"><button class="btn sm" data-add>+ Thêm dòng</button><span class="muted small">${rows.length} dòng</span></div>`;
+  el.innerHTML = html;
+  el.querySelectorAll('[data-i]').forEach(inp=>inp.addEventListener('change',()=>{
+    const c = cols.find(c=>c.key===inp.dataset.k);
+    rows[+inp.dataset.i][c.key] = c.type==='number'? num(inp.value) : inp.value;
+    changed(); renderTables();
+  }));
+  el.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click',()=>{ rows.splice(+b.dataset.del,1); changed(); renderTables(); }));
+  el.querySelector('[data-add]').addEventListener('click',()=>{ const o={}; cols.forEach(c=>o[c.key]=c.def!==undefined?(typeof c.def==='function'?c.def():c.def):''); rows.push(o); changed(); renderTables(); });
+}
+function cell(c,v,i){
+  const a = `data-i="${i}" data-k="${c.key}"`;
+  if(c.type==='select') return `<select ${a}>${c.options.map(o=>`<option ${o===v?'selected':''}>${o}</option>`).join('')}</select>`;
+  return `<input ${a} type="${c.type||'text'}" ${c.type==='number'?'step="any" class="num"':''} value="${esc(v)}">`;
+}
+
+function renderTables(){
+  const rd = S.project.reportDate;
+  table($('#tblProgress'), S.progress, [
+    {key:'name',label:'Hệ thống',w:160,def:''},
+    {key:'weight',label:'Trọng số',type:'number',def:10},
+    {key:'plan',label:'% Kế hoạch',type:'number',def:0},
+    {key:'actual',label:'% Thực tế',type:'number',def:0}],
+    {flag:r=>{const g=num(r.actual)-num(r.plan); return g<=-10?'red':g<=-5?'amber':'';}, extra:{label:'Chênh lệch',fn:r=>{const g=num(r.actual)-num(r.plan); return `<span class="${g<=-10?'R':g<=-5?'A':'G'}">${g>0?'+':''}${f1(g)}%</span>`;}}});
+  table($('#tblRfi'), S.rfi, [
+    {key:'no',label:'Số RFI',w:90},{key:'title',label:'Nội dung',w:240},{key:'disc',label:'Hệ thống',w:110},
+    {key:'sent',label:'Ngày gửi',type:'date',def:()=>rd},{key:'due',label:'Hạn trả lời',type:'date'},
+    {key:'status',label:'Trạng thái',type:'select',options:['Open','Answered','Closed'],def:'Open'},{key:'owner',label:'Bên trả lời',w:110}],
+    {flag:r=>r.status==='Open'&&r.due&&r.due<rd?(daysBetween(r.due,rd)>=7?'red':'amber'):'', extra:{label:'Quá hạn',fn:r=>r.status==='Open'&&r.due&&r.due<rd?`<span class="R">${daysBetween(r.due,rd)} ngày</span>`:''}});
+  table($('#tblNcr'), S.ncr, [
+    {key:'no',label:'Số NCR',w:90},{key:'title',label:'Nội dung',w:240},{key:'disc',label:'Hệ thống',w:110},
+    {key:'sev',label:'Mức độ',type:'select',options:['Major','Minor','Observation'],def:'Minor'},
+    {key:'raised',label:'Ngày phát hành',type:'date',def:()=>rd},{key:'due',label:'Hạn khắc phục',type:'date'},
+    {key:'status',label:'Trạng thái',type:'select',options:['Open','In progress','Closed'],def:'Open'}],
+    {flag:r=>r.status==='Closed'?'':r.sev==='Major'?'red':(r.due&&r.due<rd?'amber':'')});
+  table($('#tblSub'), S.sub, [
+    {key:'no',label:'Số hồ sơ',w:100},{key:'title',label:'Nội dung',w:240},
+    {key:'type',label:'Loại',type:'select',options:['Shop drawing','Material','Method statement','Sample'],def:'Shop drawing'},
+    {key:'sent',label:'Ngày trình',type:'date',def:()=>rd},{key:'due',label:'Hạn duyệt',type:'date'},
+    {key:'status',label:'Trạng thái',type:'select',options:['Pending','A','B','C'],def:'Pending'}],
+    {flag:r=>r.status==='C'?'red':(r.status==='Pending'&&r.due&&r.due<rd?'amber':'')});
+  table($('#tblRisk'), S.risk, [
+    {key:'title',label:'Rủi ro',w:240},{key:'p',label:'XS',type:'number',def:3},{key:'i',label:'TĐ',type:'number',def:3},
+    {key:'owner',label:'Phụ trách',w:110},{key:'mit',label:'Biện pháp',w:220},
+    {key:'status',label:'Trạng thái',type:'select',options:['Open','Monitoring','Closed'],def:'Open'}],
+    {flag:r=>{const x=num(r.p)*num(r.i); return r.status==='Closed'?'':x>=15?'red':x>=8?'amber':'';}, extra:{label:'Mức',fn:r=>num(r.p)*num(r.i)}});
+  renderHist();
+}
+function renderHist(){
+  const h = [...S.history].sort((a,b)=>a.date<b.date?1:-1);
+  const keys = Object.keys(DIM_LABEL);
+  $('#tblHist').innerHTML = h.length? `<div class="tbl-wrap"><table><thead><tr><th>Ngày</th><th class="num">Tổng</th>${keys.map(k=>`<th class="num">${DIM_LABEL[k]}</th>`).join('')}<th></th></tr></thead><tbody>
+    ${h.map(r=>`<tr><td>${fmtD(r.date)}</td><td class="num ${rag(r.overall)}"><b>${r.overall}</b></td>${keys.map(k=>{const v=r.dims&&r.dims[k]; return `<td class="num ${v!=null?rag(v):''}">${v!=null?v:'–'}</td>`;}).join('')}<td><button class="btn sm danger" data-hd="${r.date}">✕</button></td></tr>`).join('')}
+    </tbody></table></div>` : '<p class="muted">Chưa có kỳ nào được lưu.</p>';
+  document.querySelectorAll('[data-hd]').forEach(b=>b.addEventListener('click',()=>{ S.history=S.history.filter(x=>x.date!==b.dataset.hd); changed(); renderHist(); }));
+}
+
+function renderForms(){
+  fieldsForm($('#projForm'), S.project, [
+    {key:'name',label:'Tên dự án',type:'text'},{key:'code',label:'Mã dự án',type:'text'},{key:'scope',label:'Phạm vi',type:'text'},
+    {key:'client',label:'Chủ đầu tư',type:'text'},{key:'pm',label:'Giám đốc dự án',type:'text'},
+    {key:'reportDate',label:'Ngày báo cáo',type:'date'},{key:'startDate',label:'Ngày khởi công',type:'date'},{key:'endDate',label:'Ngày hoàn thành HĐ',type:'date'}]);
+  fieldsForm($('#costForm'), S.cost, [
+    {key:'bac',label:'BAC – Giá trị HĐ'},{key:'pv',label:'PV – Kế hoạch lũy kế'},{key:'ev',label:'EV – Giá trị đã thực hiện'},{key:'ac',label:'AC – Chi phí thực tế'},
+    {key:'cashPlan',label:'Thu tiền KH lũy kế'},{key:'cashActual',label:'Thu tiền thực tế lũy kế'},{key:'monthPlan',label:'Thu tiền KH tháng này'},{key:'monthActual',label:'Thu tiền thực tế tháng này'}]);
+  fieldsForm($('#hseForm'), S.hse, [
+    {key:'manhours',label:'Giờ công lũy kế'},{key:'lti',label:'LTI'},{key:'firstAid',label:'First aid'},{key:'nearMiss',label:'Near miss báo cáo'},
+    {key:'openFindings',label:'Tồn tại an toàn chưa khắc phục'},{key:'toolbox',label:'Toolbox talk đã tổ chức'}]);
+  fieldsForm($('#mpForm'), S.mp, [{key:'plan',label:'Nhân lực kế hoạch (người)'},{key:'actual',label:'Nhân lực thực tế (người)'},{key:'supervisors',label:'Giám sát/kỹ sư hiện trường'}]);
+  fieldsForm($('#wForm'), S.settings.weights, Object.keys(DIM_LABEL).map(k=>({key:k,label:DIM_LABEL[k]})));
+  fieldsForm($('#thForm'), S.settings, [{key:'green',label:'Xanh từ (điểm)'},{key:'amber',label:'Vàng từ (điểm)'}]);
+  // report date affects overdue flags in tables
+  $('#projForm [data-k="reportDate"]').addEventListener('change', renderTables);
+}
+
+/* ---------- Actions ---------- */
+let rt;
+function changed(){ save(); clearTimeout(rt); rt=setTimeout(()=>{ renderDash(); updateWSum(); },120); }
+function updateWSum(){ const s=Object.values(S.settings.weights).reduce((a,b)=>a+num(b),0); $('#wSum').innerHTML = `Tổng trọng số: <b class="${s===100?'G':'A'}">${s}</b>`; }
+
+function summaryText(){
+  const R = compute(), p=S.project;
+  const lines = [`BÁO CÁO SỨC KHỎE DỰ ÁN – ${p.name} (${fmtD(p.reportDate)})`,
+    `Tổng điểm: ${R.overall}/100 – ${RAG_TXT[R.ovRag]}`, ''];
+  Object.keys(DIM_LABEL).forEach(k=>{ const d=R.D[k]; lines.push(`- ${DIM_LABEL[k]}: ${d.score==null?'–':Math.round(d.score)} (${d.kpi})`); });
+  if(R.issues.length){ lines.push('','VẤN ĐỀ & HÀNH ĐỘNG:'); R.issues.forEach(i=>lines.push(`[${i.lvl==='R'?'ĐỎ':'VÀNG'}] ${i.text}\n   → ${i.action}`)); }
+  return lines.join('\n');
+}
+
+const TABS = [['dash','Tổng quan'],['project','Dự án · Tiến độ · Chi phí'],['rfi','RFI'],['ncr','NCR'],['sub','Submittal'],['hse','HSE · Nhân lực'],['risk','Rủi ro'],['hist','Lịch sử'],['set','Cài đặt']];
+function showTab(id){
+  document.querySelectorAll('section.tab').forEach(s=>s.classList.toggle('active', s.id==='tab-'+id));
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active', b.dataset.t===id));
+  try{ sessionStorage.setItem('phc.tab',id); }catch(e){}
+  if(id==='dash') renderDash();
+}
+
+function init(){
+  load();
+  $('#nav').innerHTML = TABS.map(([id,l])=>`<button data-t="${id}">${l}</button>`).join('');
+  $('#nav').addEventListener('click',e=>{ const b=e.target.closest('button'); if(b) showTab(b.dataset.t); });
+  renderForms(); renderTables(); updateWSum();
+  let tab='dash'; try{ tab=sessionStorage.getItem('phc.tab')||'dash'; }catch(e){}
+  showTab(tab);
+
+  $('#btnSnap').onclick = ()=>{
+    const R = compute(), dims={};
+    Object.keys(R.D).forEach(k=>{ if(R.D[k].score!=null) dims[k]=Math.round(R.D[k].score); });
+    S.history = S.history.filter(h=>h.date!==S.project.reportDate);
+    S.history.push({date:S.project.reportDate, overall:R.overall, dims});
+    changed(); renderHist(); toast('Đã lưu kỳ '+fmtD(S.project.reportDate));
+  };
+  $('#btnCopy').onclick = async ()=>{
+    const t = summaryText();
+    try{ await navigator.clipboard.writeText(t); toast('Đã copy tóm tắt'); }
+    catch(e){ const ta=document.createElement('textarea'); ta.value=t; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); toast('Đã copy tóm tắt'); }
+  };
+  $('#btnTheme').onclick = ()=>{
+    const cur = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+    const nx = cur==='dark'?'light':'dark'; document.documentElement.dataset.theme = nx;
+    try{ localStorage.setItem('phc.theme',nx); }catch(e){} renderDash();
+  };
+  $('#btnExport').onclick = ()=>{
+    const blob = new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+    const a = document.createElement('a'); a.href=URL.createObjectURL(blob);
+    a.download = `health_${(S.project.code||'project').replace(/\W+/g,'_')}_${S.project.reportDate}.json`; a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  };
+  $('#fileImport').onchange = e=>{
+    const f=e.target.files[0]; if(!f) return;
+    f.text().then(t=>{ const d=JSON.parse(t); if(!d.project) throw new Error('Sai định dạng'); S=d; S.settings=Object.assign(defaultSettings(),S.settings||{}); save(); renderForms(); renderTables(); renderDash(); updateWSum(); toast('Đã nhập dữ liệu'); })
+      .catch(err=>alert('Không đọc được file: '+err.message));
+    e.target.value='';
+  };
+  $('#btnSample').onclick = ()=>{ if(confirm('Ghi đè dữ liệu hiện tại bằng dữ liệu mẫu?')){ S=sampleData(); save(); renderForms(); renderTables(); renderDash(); updateWSum(); } };
+  $('#btnClear').onclick = ()=>{ if(confirm('Xóa toàn bộ dữ liệu? Nên Xuất JSON trước.')){ S=emptyData(); save(); renderForms(); renderTables(); renderDash(); updateWSum(); } };
+
+  if('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+try{ const t=localStorage.getItem('phc.theme'); if(t) document.documentElement.dataset.theme=t; }catch(e){}
+init();
+</script>
+</body>
+</html>
